@@ -46,9 +46,13 @@ jobs:
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/bullet-install"
+          -DBUILD_TESTS=ON
 
       - name: Build
         run: cmake --build build --config Release --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure -C Release
 
       - name: Upload Linux plugin
         uses: actions/upload-artifact@v4
@@ -84,9 +88,13 @@ jobs:
           -DBULLET_COLLISION_LIBRARY="$env:VCPKG_INSTALLATION_ROOT/installed/x86-windows-static/lib/BulletCollision.lib"
           -DBULLET_MATH_LIBRARY="$env:VCPKG_INSTALLATION_ROOT/installed/x86-windows-static/lib/LinearMath.lib"
           -DBULLET_SOFTBODY_LIBRARY="$env:VCPKG_INSTALLATION_ROOT/installed/x86-windows-static/lib/BulletSoftBody.lib"
+          -DBUILD_TESTS=ON
 
       - name: Build
         run: cmake --build build --config Release --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure -C Release
 
       - name: Upload Windows plugin
         uses: actions/upload-artifact@v4
