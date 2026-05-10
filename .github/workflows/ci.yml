@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build Linux plugin
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            g++-multilib \
+            libbullet-dev:i386 \
+            ninja-build
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Upload Linux plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ColAndreas-linux
+          path: |
+            build/ColAndreas*.so
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows plugin
+    runs-on: windows-2022
+
+    env:
+      VCPKG_DEFAULT_TRIPLET: x86-windows-static
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Bullet
+        run: vcpkg install bullet3:x86-windows-static
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -G "Visual Studio 17 2022"
+          -A Win32
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Upload Windows plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ColAndreas-windows
+          path: |
+            build/Release/ColAndreas.dll
+          if-no-files-found: error
