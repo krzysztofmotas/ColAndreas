@@ -1,23 +1,60 @@
 #include "ColAndreasDatabaseReader.h"
 #include "ColAndreas.h"
 
-std::map<uint16_t, CollisionModelstructure> CollisionModels;
+std::vector<CollisionModelstructure> CollisionModels;
 ItemPlacementstructure* ModelPlacements;
 std::vector<ItemPlacementstructure*> RemovedGameObjects;
 uint16_t ModelCount = 0;
 uint32_t IPLCount = 0;
-std::map<int32_t, uint16_t> ModelRef;
+uint16_t ModelRef[20001];
+std::map<int32_t, uint16_t> CustomModelRef;
+
+void ClearModelRefs()
+{
+	for (int i = 0; i <= 20000; i++)
+	{
+		ModelRef[i] = 65535;
+	}
+	CustomModelRef.clear();
+}
+
+void SetModelRef(int32_t model, uint16_t index)
+{
+	if (model >= 0 && model <= 20000)
+	{
+		ModelRef[model] = index;
+	}
+	else
+	{
+		CustomModelRef[model] = index;
+	}
+}
+
+uint16_t LookupModelRef(int32_t model)
+{
+	if (model >= 0 && model <= 20000)
+	{
+		return ModelRef[model];
+	}
+
+	std::map<int32_t, uint16_t>::iterator it = CustomModelRef.find(model);
+	if (it != CustomModelRef.end())
+	{
+		return it->second;
+	}
+	return 65535;
+}
 
 void FreeCollisionModelGeometry()
 {
-	for (std::map<uint16_t, CollisionModelstructure>::iterator it = CollisionModels.begin(); it != CollisionModels.end(); ++it)
+	for (std::vector<CollisionModelstructure>::iterator it = CollisionModels.begin(); it != CollisionModels.end(); ++it)
 	{
-		delete[] it->second.SphereData;
-		delete[] it->second.BoxData;
-		delete[] it->second.FacesData;
-		it->second.SphereData = NULL;
-		it->second.BoxData = NULL;
-		it->second.FacesData = NULL;
+		delete[] it->SphereData;
+		delete[] it->BoxData;
+		delete[] it->FacesData;
+		it->SphereData = NULL;
+		it->BoxData = NULL;
+		it->FacesData = NULL;
 	}
 }
 
@@ -38,7 +75,7 @@ void DeleteCollisionData()
 		delete RemovedGameObjects[i];
 	}
 	RemovedGameObjects.clear();
-	ModelRef.clear();
+	ClearModelRefs();
 	ModelCount = 0;
 	IPLCount = 0;
 }
@@ -76,6 +113,8 @@ bool ReadColandreasDatabaseFile(std::string FileLocation)
 			{
 				GetBytes(buffer, ModelCount, FileIndex, 2);
 				GetBytes(buffer, IPLCount, FileIndex, 4);
+				ClearModelRefs();
+				CollisionModels.resize(ModelCount);
 
 				if (ModelCount > 0) {
 
@@ -128,7 +167,7 @@ bool ReadColandreasDatabaseFile(std::string FileLocation)
 				// Initialize model reference
 				for (int i = 0; i < ModelCount; i++)
 				{
-					ModelRef[CollisionModels[i].Modelid] = i;
+					SetModelRef(CollisionModels[i].Modelid, i);
 				}
 
 				returnValue = true;

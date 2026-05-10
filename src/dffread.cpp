@@ -83,8 +83,16 @@ namespace rw {
 			{
 				uint16_t i = ModelCount;
 				ModelCount++;
+				CollisionModels.resize(ModelCount);
 
 				CollisionModels[i].CustomModelid = modelid;
+				CollisionModels[i].Modelid = modelid;
+				CollisionModels[i].SphereCount = 0;
+				CollisionModels[i].BoxCount = 0;
+				CollisionModels[i].FaceCount = 0;
+				CollisionModels[i].SphereData = NULL;
+				CollisionModels[i].BoxData = NULL;
+				CollisionModels[i].FacesData = NULL;
 				if (fileHeader.version == 'L') // Version 1
 				{
 					uint32_t itemCount = 0;
@@ -181,7 +189,7 @@ namespace rw {
 					// Prepare for reading the next collision
 					rw.seekg(beginPos + 8 + fileHeader.size);
 
-					ModelRef[CollisionModels[i].Modelid] = i;
+					SetModelRef(CollisionModels[i].Modelid, i);
 					ColAndreasColObject* colObject = new ColAndreasColObject(i, false);
 					colObjects.push_back(colObject);
 					colConvex.push_back(NULL);
@@ -282,7 +290,7 @@ namespace rw {
 						// Prepare for reading the next collision
 						rw.seekg(beginPos + 8 + fileHeader.size);
 
-						ModelRef[CollisionModels[i].CustomModelid] = i;
+						SetModelRef(CollisionModels[i].CustomModelid, i);
 
 						ColAndreasColObject* colObject = new ColAndreasColObject(i, false);
 						colObjects.push_back(colObject);

@@ -111,15 +111,16 @@ returns a boolean true if function suceeded, otherwise false.
 */
 
 bool ReadColandreasDatabaseFile(std::string FileLocation);
+void SetModelRef(int32_t model, uint16_t index);
+uint16_t LookupModelRef(int32_t model);
 void FreeCollisionModelGeometry();
 void FreeModelPlacements();
 void DeleteCollisionData();
-extern std::map<uint16_t, CollisionModelstructure> CollisionModels;
+extern std::vector<CollisionModelstructure> CollisionModels;
 extern ItemPlacementstructure* ModelPlacements;
 extern std::vector<ItemPlacementstructure*> RemovedGameObjects;
 extern uint16_t ModelCount;
 extern uint32_t IPLCount;
-extern std::map<int32_t, uint16_t> ModelRef;
 
 #endif 
 

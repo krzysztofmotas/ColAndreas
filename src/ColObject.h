@@ -44,10 +44,11 @@ public:
 	ColAndreasColObject(uint16_t colindex, bool thirdparty);
 	ColAndreasColObject(ColAndreasColObject* source);
 	~ColAndreasColObject();
-	btCompoundShape* getCompoundShape();
+	btCollisionShape* getCollisionShape();
 private:
 	// Object Data
 	btCompoundShape* colMapObject;
+	btCollisionShape* collisionShape;
 
 	// Mesh
 	btTriangleMesh* trimesh;

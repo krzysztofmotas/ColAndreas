@@ -11,7 +11,9 @@ std::vector <ColAndreasColObject*> colConvex;
 
 ColAndreasColObject::ColAndreasColObject(uint16_t colindex, bool thirdparty = false)
 {
-	colMapObject = new btCompoundShape();
+	bool useCompound = CollisionModels[colindex].SphereCount > 0 || CollisionModels[colindex].BoxCount > 0 || CollisionModels[colindex].FaceCount == 0;
+	colMapObject = useCompound ? new btCompoundShape() : NULL;
+	collisionShape = NULL;
 	trimesh = NULL;
 	meshshape = NULL;
 	ownsTriangleMesh = true;
@@ -51,16 +53,43 @@ ColAndreasColObject::ColAndreasColObject(uint16_t colindex, bool thirdparty = fa
 		{
 			meshshape = new btBvhTriangleMeshShape(trimesh, true);
 		}
-		colMapObject->addChildShape(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)), meshshape);
+		if (useCompound)
+		{
+			colMapObject->addChildShape(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)), meshshape);
+		}
+		else
+		{
+			collisionShape = meshshape;
+		}
+	}
+
+	if (collisionShape == NULL)
+	{
+		collisionShape = colMapObject;
 	}
 }
 
 ColAndreasColObject::ColAndreasColObject(ColAndreasColObject* source)
 {
-	colMapObject = new btCompoundShape();
+	colMapObject = source->colMapObject != NULL ? new btCompoundShape() : NULL;
+	collisionShape = NULL;
 	trimesh = source->trimesh;
 	meshshape = NULL;
 	ownsTriangleMesh = false;
+
+	if (source->colMapObject == NULL)
+	{
+		if (trimesh != NULL)
+		{
+			meshshape = new btConvexTriangleMeshShape(trimesh);
+			collisionShape = meshshape;
+		}
+		else
+		{
+			collisionShape = source->collisionShape;
+		}
+		return;
+	}
 
 	for (int i = 0; i < source->colMapObject->getNumChildShapes(); i++)
 	{
@@ -77,6 +106,7 @@ ColAndreasColObject::ColAndreasColObject(ColAndreasColObject* source)
 			colMapObject->addChildShape(childTransform, childShape);
 		}
 	}
+	collisionShape = colMapObject;
 }
 
 ColAndreasColObject::~ColAndreasColObject()
@@ -98,9 +128,9 @@ ColAndreasColObject::~ColAndreasColObject()
 }
 
 
-btCompoundShape* ColAndreasColObject::getCompoundShape()
+btCollisionShape* ColAndreasColObject::getCollisionShape()
 {
-	return colMapObject;
+	return collisionShape;
 }
 
 
@@ -130,7 +160,7 @@ btCollisionObject* CreateStaticCollisionObject(int32_t modelid, const btQuaterni
 {
 	uint16_t modelRef = GetModelRef(modelid);
 	btCollisionObject* collisionObject = new btCollisionObject();
-	collisionObject->setCollisionShape(colObjects[modelRef]->getCompoundShape());
+	collisionObject->setCollisionShape(colObjects[modelRef]->getCollisionShape());
 	collisionObject->setWorldTransform(btTransform(objectRot, objectPos));
 	collisionObject->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
 	collisionObject->setUserIndex(modelid);
@@ -329,7 +359,7 @@ int ObjectManager::getBoundingSphere(int32_t modelid, btVector3& center, btScala
 
 	if (colindex != 65535)
 	{
-		colObjects[colindex]->getCompoundShape()->getBoundingSphere(center, radius);
+		colObjects[colindex]->getCollisionShape()->getBoundingSphere(center, radius);
 		return 1;
 	}
 	return 0;
@@ -352,7 +382,7 @@ int ObjectManager::getBoundingBox(int32_t modelid, btVector3& min, btVector3& ma
 
 	if (colindex != 65535)
 	{
-		colObjects[colindex]->getCompoundShape()->getAabb(t, min, max);
+		colObjects[colindex]->getCollisionShape()->getAabb(t, min, max);
 		return 1;
 	}
 	return 0;
@@ -449,11 +479,7 @@ uint16_t GetModelRef(int32_t model)
 {
 	if ((model >= 0 && model <= 20000) || (model <= -1000 && model > -30000))
 	{
-		std::map<int32_t, uint16_t>::iterator it = ModelRef.find(model);
-		if (it != ModelRef.end())
-		{
-			return it->second;
-		}
+		return LookupModelRef(model);
 	}
 	return 65535;
 }

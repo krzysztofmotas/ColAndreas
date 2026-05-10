@@ -291,7 +291,7 @@ int ColAndreasWorld::performContactTest(int32_t modelid, btVector3& objectPos, b
 		colConvex[colindex] = new ColAndreasColObject(colObjects[colindex]);
 	}
 	btCollisionObject* colMapObject = new btCollisionObject();
-	colMapObject->setCollisionShape(colConvex[colindex]->getCompoundShape());
+	colMapObject->setCollisionShape(colConvex[colindex]->getCollisionShape());
 	colMapObject->setWorldTransform(btTransform(objectRot, objectPos));
 	colMapObject->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
 	
